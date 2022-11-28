@@ -19,4 +19,4 @@ make
 
 # Usage
 
-Connect D+/D- of a usb shield to gp0/gp1
+Connect D+/D- of a usb shield to gp0/gp1 and hook power and ground to the shield
