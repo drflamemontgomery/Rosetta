@@ -19,7 +19,4 @@ target_include_directories(pio_test PRIVATE src)
 target_link_libraries(pio_test
 	pico_stdlib pico_pio_usb tinyusb_device)
 
-#pico_enable_stdio_usb(pio_test 1)
-#pico_enable_stdio_uart(pio_test 0)
-
 pico_add_extra_outputs(pio_test)
