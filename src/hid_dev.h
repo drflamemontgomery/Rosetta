@@ -9,14 +9,15 @@
 #include <stdbool.h>
 #include "pio_usb.h"
 
+// Report of the faceoff pro controller
 typedef struct faceoff_pro_controller_data {
-  uint16_t buttons;
-  uint8_t hat; 
+  uint16_t buttons; // max value 0b0011111111111111 or 0x3fff
+  uint8_t hat;      // works like a compass 0x00 == Top, 0x07 == Top Left, 0x0f == Center 
   uint8_t axis_x;
   uint8_t axis_y;
   uint8_t axis_z;
   uint8_t axis_rz;
-  uint8_t __unused_byte;
+  uint8_t __unused; // byte that stays zero
 } pro_controller_data;
 
 extern pro_controller_data hid_device_out[MAX_HID_OUT];
