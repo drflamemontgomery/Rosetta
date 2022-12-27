@@ -187,8 +187,12 @@ void hid_task(void)
 
 // Callback used for adding USB devices to our abstract layer
 void pio_hid_connect_host_cb(usb_device_t *device) {
+  //blink_interval_ms = BLINK_MOUNTED;
+  
   if(device == NULL) {return;}
   if(device->device_class == CLASS_HUB) {return;}
+  
+  
 
   for(int i = 0; i < MAX_HID_DEVICES; i++) {
     // Skip devices which already have a USB attached
