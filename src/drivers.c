@@ -5,9 +5,10 @@
 #include <string.h>
 
 
-const uint8_t __in_flash("drivers") num_of_drivers = 1;
+const uint8_t __in_flash("drivers") num_of_drivers = 2;
 const usb_driver_t __in_flash("drivers") drivers[] = {
   FACEOFF_PRO_CONTROLLER_DRIVER, 
+  XBOX_WIRELESS_ADAPTER_DRIVER,
 };
 
 #define FACEOFF_DATA_LEN 8
@@ -44,6 +45,12 @@ void detach_driver(hid_dev_t* dev) {
   // Set blink interval to Unmounted so we get a visual on disconnect
   blink_interval_ms = 250;
 }
+
+
+
+//============================================================================---
+//   FACEOFF_PRO_CONTROLLER  
+//============================================================================---
 
 bool faceoff_pro_controller_is_driver_for_device(uint16_t vid, uint16_t pid) {
   return vid == 0x0e6f && pid == 0x0180;
@@ -83,5 +90,32 @@ void faceoff_pro_controller_get_data_for_device(hid_dev_t* device) {
     if(len == FACEOFF_DATA_LEN) {
       memcpy(device->data, (void*)&data, sizeof(data));
     }
+  }
+}
+
+//============================================================================---
+//   XBOX_WIRELESS_ADAPTER 
+//============================================================================---
+bool xbox_wireless_adapter_is_driver_for_device(uint16_t vid, uint16_t pid) {
+  return vid == 0x045e && pid == 0x0719;
+  //return true;
+}
+
+void xbox_wireless_adapter_initialize_device(hid_dev_t* device, int dev_id) {
+  device->data_len = 0;
+  device->data = NULL;
+  blink_interval_ms = 3000;
+}
+
+void xbox_wireless_adapter_get_data_for_device(hid_dev_t* device) {
+  for (int ep_idx = 0; ep_idx < PIO_USB_DEV_EP_CNT; ep_idx++) {
+    endpoint_t *ep = pio_usb_get_endpoint(device->_device, ep_idx);
+
+    if (ep == NULL) {
+      break;
+    } 
+
+    static uint8_t temp[64] = {0x00};
+    pio_usb_get_in_data(ep, temp, sizeof(temp));
   }
 }
