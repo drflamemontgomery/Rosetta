@@ -21,6 +21,17 @@ static const usb_driver_t FACEOFF_PRO_CONTROLLER_DRIVER = {
   .get_data_for_device = faceoff_pro_controller_get_data_for_device,
 };
 
+//============================================================================---
+//   XBOX_WIRELESS_ADAPTER 
+//============================================================================---
+bool xbox_wireless_adapter_is_driver_for_device(uint16_t vid, uint16_t pid);
+void xbox_wireless_adapter_initialize_device(hid_dev_t* device, int dev_id);
+void xbox_wireless_adapter_get_data_for_device(hid_dev_t* device);
+static const usb_driver_t XBOX_WIRELESS_ADAPTER_DRIVER = {
+  .is_driver_for_device = xbox_wireless_adapter_is_driver_for_device,
+  .initialize_device = xbox_wireless_adapter_initialize_device,
+  .get_data_for_device = xbox_wireless_adapter_get_data_for_device,
+};
 
 //============================================================================---
 //   DRIVERS  

@@ -48,6 +48,10 @@ void run_config(hid_dev_t* dev) {
         break;
       case AXIS:
         run_axis_config(data[elem->byte], elem);
+        break;
+      case USER_DEFINED:
+        elem->user.run_config(elem, data);
+        break;
       default:
         break;
     }

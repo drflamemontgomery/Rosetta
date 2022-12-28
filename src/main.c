@@ -176,7 +176,9 @@ void hid_task(void)
 
   if ( time_us_64() - start_us < interval_us) return; // not enough time
   start_us += interval_us;
-  
+ 
+  static bool switch_player[4] = {true};
+
   // Output reports for all devices
   for(int i = 0; i < 4; i++) {
     if(tud_hid_n_ready(i)) {

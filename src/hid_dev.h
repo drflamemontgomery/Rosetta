@@ -20,6 +20,16 @@ typedef struct faceoff_pro_controller_data {
   uint8_t __unused; // byte that stays zero
 } pro_controller_data;
 
+typedef struct struct_xbox_controller {
+  uint16_t buttons;
+  uint8_t lt;
+  uint8_t rt;
+  uint8_t axis_x;
+  uint8_t axis_y;
+  uint8_t axis_z;
+  uint8_t axis_rz;
+} xbox_controller;
+
 extern pro_controller_data hid_device_out[MAX_HID_OUT];
 
 typedef enum enum_config_type {
@@ -46,7 +56,7 @@ typedef struct struct_hat_config {
 struct struct_config_elem;
 
 typedef struct struct_user_config {
-  void (*run_config)(struct struct_config_elem);
+  void (*run_config)(struct struct_config_elem*, uint8_t* data);
   void* data;
 } user_config;
 
