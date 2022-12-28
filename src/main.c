@@ -21,6 +21,8 @@ hid_dev_t hid_devices[MAX_HID_DEVICES] = {
 };
 static usb_device_t *usb_device = NULL;
 
+int outputs[MAX_HID_DEVICES] = {0, 1, 2, 3};
+
 // Data used by device drivers for interacting as a usb device
 pro_controller_data hid_device_out[MAX_HID_OUT] = {
   {0x0000, 0x0f, 0x80, 0x80, 0x80, 0x80, 0x00} 
@@ -81,7 +83,7 @@ int main(void) {
 
   tud_init(0);
 
-
+  srand(time_us_64()*rand());
 
   while(1) {
     tud_task();
@@ -167,6 +169,24 @@ void tud_resume_cb(void)
 // USB HID
 //--------------------------------------------------------------------+
 
+#define ABS(a) (a < 0 ? -a : a)
+
+void switch_players() {
+  for(int i = 0; i < 4; i++) {
+    int p = ABS(rand())%4;
+
+    bool changed = true;
+    while(changed) {
+      changed = false;
+      for(int j = 0; j < i; j++) {
+        if(p != outputs[j]) { continue; }
+        changed = true;
+        p = (p + 1)%4;
+      }
+    }
+    outputs[i] = p;
+  }
+}
 
 void hid_task(void)
 {
@@ -176,11 +196,21 @@ void hid_task(void)
 
   if ( time_us_64() - start_us < interval_us) return; // not enough time
   start_us += interval_us;
-  
+ 
+  static bool switch_player[4] = {true};
+
   // Output reports for all devices
   for(int i = 0; i < 4; i++) {
+    if(!switch_player[i] && (hid_device_out[i].buttons & 0x0c00) == 0x0c00) {
+      switch_players();
+      switch_player[i] = true;
+    }
+    else if((hid_device_out[i].buttons & 0x0c00) != 0x0c00) {
+      switch_player[i] = false;
+    }
+
     if(tud_hid_n_ready(i)) {
-      tud_hid_n_report(i, 0, (uint8_t*)&hid_device_out[i], sizeof(pro_controller_data));
+      tud_hid_n_report(outputs[i], 0, (uint8_t*)&hid_device_out[i], sizeof(pro_controller_data));
     }
   }
 }
