@@ -4,6 +4,9 @@
 #define MAX_HID_OUT 4
 #define OUT_REPORT_SIZE 8
 
+#define MAX_INPUT_DEVICES 8
+#define MAX_ATTACHED_DEVICES 8
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -77,6 +80,7 @@ typedef struct struct_config {
   config_elem* elems;
 } config_t;
 
+[[deprecated("Use until new layer is created")]]
 typedef struct struct_hid_dev {
   usb_device_t *_device;
   uint8_t data_len;
@@ -85,12 +89,29 @@ typedef struct struct_hid_dev {
   uint8_t driver_idx;
 } hid_dev_t;
 
-void run_config(hid_dev_t* dev);
+typedef struct struct_device {
+  bool connected;
+  uint8_t data_len;
+  uint8_t *data;
+  config_t *config;
+} device_t;
+
+typedef struct struct_input_dev {
+  usb_device_t *_device;
+  int num_of_devices;
+  int* devices_idx;
+  uint8_t driver_idx;
+} input_dev_t;
+
+void run_config(input_dev_t* dev);
 
 typedef struct struct_usb_driver {
   bool (*is_driver_for_device)(uint16_t, uint16_t); // is_driver_for_device(int vid, int pid);
-  void (*initialize_device)(hid_dev_t*, int); // initialize_device(hid_dev_t* device, int dev_id);
-  void (*get_data_for_device)(hid_dev_t*); // get_data_for_device(hid_dev_t* device);
+  void (*initialize_device)(input_dev_t*); // initialize_device(input_dev_t* device);
+  void (*get_data_for_device)(input_dev_t*); // get_data_for_device(input_dev_t* device);
 } usb_driver_t;
+
+extern device_t attached_devices[MAX_ATTACHED_DEVICES]; 
+
 #endif
 
