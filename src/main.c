@@ -60,7 +60,7 @@ void core1_main() {
   config.pin_dp = 2;
   config.alarm_pool = (void*)alarm_pool_create(2, 1);
   usb_device = pio_usb_host_init(&config);
-  //pio_usb_host_add_port(6);
+  pio_usb_host_add_port(6);
 
   while (true) {
     pio_usb_host_task();
@@ -200,6 +200,7 @@ void pio_hid_connect_host_cb(usb_device_t *device) {
     input_devices[i]._device = device;
     attach_driver(&input_devices[i]);
     num_of_input_devices += 1;
+    return;
   }
 
   /*
@@ -229,7 +230,7 @@ void pio_disconnect_host_cb(usb_device_t *device) {
     input_devices[i]._device = NULL;
     detach_driver(&input_devices[i]);
     num_of_input_devices -= 1;
-    break;
+    return;
   }
   
   /*
