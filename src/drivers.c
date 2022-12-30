@@ -24,7 +24,7 @@ void attach_driver(input_dev_t* dev) {
       //blink_interval_ms = 1000;
       dev->driver_idx = i;
       drivers[i].initialize_device(dev);
-      drivers[i].get_data_for_device(dev);
+      //drivers[i].get_data_for_device(dev);
       break;
     }
   }
@@ -114,12 +114,12 @@ void faceoff_pro_controller_get_data_for_device(input_dev_t* device) {
 
     struct faceoff_pro_controller_data data;
     int len = pio_usb_get_in_data(ep, (uint8_t*)&data, 64);
-    blink_interval_ms = 500;
+    //blink_interval_ms = 500;
     if(len > 0) { 
       blink_interval_ms = 2000;
+      memcpy(attached_devices[device->devices_idx[0]].data, (void*)&data, sizeof(data));
     }
     // Check that we grabbed the correct amount of data
-    //memcpy(attached_devices[device->devices_idx[0]].data, (void*)&data, sizeof(data));
   }
 }
 

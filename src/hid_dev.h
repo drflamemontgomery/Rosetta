@@ -80,15 +80,6 @@ typedef struct struct_config {
   config_elem* elems;
 } config_t;
 
-[[deprecated("Use until new layer is created")]]
-typedef struct struct_hid_dev {
-  usb_device_t *_device;
-  uint8_t data_len;
-  uint8_t *data;
-  config_t config;  
-  uint8_t driver_idx;
-} hid_dev_t;
-
 typedef struct struct_device {
   bool connected;
   uint8_t data_len;

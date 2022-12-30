@@ -15,12 +15,7 @@
 #define MAX_HID_DEVICES 4
 
 uint8_t num_of_input_devices = 0;
-uint8_t num_of_hid_devices = 0;
 // Abstraction for holding current plugged in devices with their drivers
-[[deprecated("Use until new abstract layer is implemented")]]
-hid_dev_t hid_devices[MAX_HID_DEVICES] = {
-  {NULL, 0, NULL, {0, NULL}, 0}
-};
 
 input_dev_t input_devices[MAX_INPUT_DEVICES]  = {{ NULL, 0, NULL, 0 }};
 device_t attached_devices[MAX_ATTACHED_DEVICES] = {{ false, 0x00, NULL, NULL }};
@@ -62,8 +57,10 @@ void core1_main() {
 
   // To run USB SOF interrupt in core1, create alarm pool in core1.
   static pio_usb_configuration_t config = PIO_USB_DEFAULT_CONFIG;
+  config.pin_dp = 2;
   config.alarm_pool = (void*)alarm_pool_create(2, 1);
   usb_device = pio_usb_host_init(&config);
+  //pio_usb_host_add_port(6);
 
   while (true) {
     pio_usb_host_task();
@@ -262,8 +259,8 @@ void usb_host_task() {
   }
 
   uint8_t found_devices = 0;
-  for(int i = 0; i < MAX_HID_DEVICES; i++) {
-    if(found_devices >= num_of_hid_devices) { break; }
+  for(int i = 0; i < MAX_INPUT_DEVICES; i++) {
+    if(found_devices >= num_of_input_devices) { break; }
     if(input_devices[i]._device == NULL) { continue; }
     
     found_devices++;

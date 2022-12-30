@@ -42,9 +42,4 @@ extern const usb_driver_t __in_flash("drivers") drivers[];
 
 void attach_driver(input_dev_t* dev);
 void detach_driver(input_dev_t* dev);
-
-void attach_driver_legacy(hid_dev_t* dev, int dev_id);
-void detach_driver_legacy(hid_dev_t* dev);
-
-void apply_config_for_device_legacy(hid_dev_t* dev);
 #endif
