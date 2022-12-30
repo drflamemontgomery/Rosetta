@@ -14,16 +14,17 @@
 
 #define MAX_HID_DEVICES 4
 
-uint8_t num_of_hid_devices = 0;
+uint8_t num_of_input_devices = 0;
 // Abstraction for holding current plugged in devices with their drivers
-hid_dev_t hid_devices[MAX_HID_DEVICES] = {
-  {NULL, 0, NULL, {0, NULL}, 0}
-};
+
+input_dev_t input_devices[MAX_INPUT_DEVICES]  = {{ NULL, 0, NULL, 0 }};
+device_t attached_devices[MAX_ATTACHED_DEVICES] = {{ false, 0x00, NULL, NULL }};
+
 static usb_device_t *usb_device = NULL;
 
 // Data used by device drivers for interacting as a usb device
 pro_controller_data hid_device_out[MAX_HID_OUT] = {
-  {0x0000, 0x0f, 0x80, 0x80, 0x80, 0x80, 0x00} 
+  {0x0000, 0x0f, 0x80, 0x80, 0x80, 0x80} 
 };
 
 
@@ -179,7 +180,6 @@ void hid_task(void)
   if ( time_us_64() - start_us < interval_us) return; // not enough time
   start_us += interval_us;
  
-  static bool switch_player[4] = {true};
 
   // Output reports for all devices
   for(int i = 0; i < 4; i++) {
@@ -193,34 +193,26 @@ void hid_task(void)
 void pio_hid_connect_host_cb(usb_device_t *device) {
   if(device == NULL) {return;}
   if(device->device_class == CLASS_HUB) {return;}
-
-  for(int i = 0; i < MAX_HID_DEVICES; i++) {
-    // Skip devices which already have a USB attached
-    if(hid_devices[i]._device != NULL) {
-      continue;
-    }
-
-    // Add driver which sets up configs and necessary data
-    hid_devices[i]._device = device;
-    attach_driver(&hid_devices[i], i);    
-    num_of_hid_devices += 1;
-    break;
+  
+  for(int i = 0; i < MAX_INPUT_DEVICES; i++) {
+    if(input_devices[i]._device != NULL) { continue; }
+    input_devices[i]._device = device;
+    attach_driver(&input_devices[i]);
+    num_of_input_devices += 1;
+    return;
   }
-
 }
 
 void pio_disconnect_host_cb(usb_device_t *device) {
   if(device == NULL) {return;}
   if(device->device_class == CLASS_HUB) {return;}
-  for(int i = 0; i < MAX_HID_DEVICES; i++) {
-    if(hid_devices[i]._device != device) {
-      continue;
-    }
-    
-    hid_devices[i]._device = NULL;
-    detach_driver(&hid_devices[i]);
-    num_of_hid_devices -= 1;
-    break;
+  
+  for(int i = 0; i < MAX_INPUT_DEVICES; i++) {
+    if(input_devices[i]._device != device) { continue; }
+    input_devices[i]._device = NULL;
+    detach_driver(&input_devices[i]);
+    num_of_input_devices -= 1;
+    return;
   }
 }
 
@@ -231,17 +223,17 @@ void usb_host_task() {
 
   // Reset Report Data so that we can change the report 
   for(int i = 0; i < MAX_HID_OUT; i++) {
-    static const pro_controller_data default_data = {0x0000, 0x0f, 0x80, 0x80, 0x80, 0x80, 0x00};
+    static const pro_controller_data default_data = {0x0000, 0x0f, 0x80, 0x80, 0x80, 0x80};
     memcpy(&hid_device_out[i], &default_data, sizeof(default_data));
   }
 
   uint8_t found_devices = 0;
-  for(int i = 0; i < MAX_HID_DEVICES; i++) {
-    if(found_devices >= num_of_hid_devices) { break; }
-    if(hid_devices[i]._device == NULL) { continue; }
+  for(int i = 0; i < MAX_INPUT_DEVICES; i++) {
+    if(found_devices >= num_of_input_devices) { break; }
+    if(input_devices[i]._device == NULL) { continue; }
     
     found_devices++;
-    hid_dev_t* dev = &hid_devices[i];
+    input_dev_t* dev = &input_devices[i];
     
     if(!dev->_device->connected) {continue;}
     if(dev->_device->device_class == CLASS_HUB) {continue;}
