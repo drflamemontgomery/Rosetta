@@ -19,4 +19,4 @@ make
 
 # Usage
 
-Connect D+/D- of a usb shield to gp0/gp1 and hook power and ground to the shield
+Connect D+/D- of 2 usb shields to gp2/gp3 and gp6/gp7 then hook power and ground to the shields

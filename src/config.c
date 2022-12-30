@@ -31,25 +31,34 @@ void run_axis_config(uint8_t byte, config_elem* config) {
   }
 }
 
-void run_config(hid_dev_t* dev) {
-  
-  uint8_t* data = dev->data;
-  config_t* config = &dev->config;
+void run_config(input_dev_t* dev) {
+  for(int idx = 0; idx < dev->num_of_devices; idx++) {
+    if(dev->devices_idx[idx] < 0) { continue; }
+    device_t* device = &attached_devices[dev->devices_idx[idx]];
+    if(!device->connected) { continue; }
 
-  for(int i = 0; i < config->num_of_elems; i++) {
-    config_elem* elem = &config->elems[i];
+    uint8_t* data = device->data;
+    config_t* config = device->config;
 
-    switch(elem->type) {
-      case BUTTON:
-        run_button_config(data[elem->byte], elem);
-        break;
-      case HAT:
-        hid_device_out[elem->output].hat = data[elem->byte];
-        break;
-      case AXIS:
-        run_axis_config(data[elem->byte], elem);
-      default:
-        break;
-    }
-  } 
+    for(int i = 0; i < config->num_of_elems; i++) {
+      config_elem* elem = &config->elems[i];
+
+      switch(elem->type) {
+        case BUTTON:
+          run_button_config(data[elem->byte], elem);
+          break;
+        case HAT:
+          hid_device_out[elem->output].hat = data[elem->byte];
+          break;
+        case AXIS:
+          run_axis_config(data[elem->byte], elem);
+          break;
+        case USER_DEFINED:
+          elem->user.run_config(elem, data);
+          break;
+        default:
+          break;
+      }
+    } 
+  }
 }
