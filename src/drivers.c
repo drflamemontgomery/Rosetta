@@ -116,7 +116,6 @@ void faceoff_pro_controller_get_data_for_device(input_dev_t* device) {
     int len = pio_usb_get_in_data(ep, (uint8_t*)&data, 64);
     //blink_interval_ms = 500;
     if(len > 0) { 
-      blink_interval_ms = 2000;
       memcpy(attached_devices[device->devices_idx[0]].data, (void*)&data, sizeof(data));
     }
     // Check that we grabbed the correct amount of data
@@ -132,7 +131,7 @@ bool xbox_wireless_adapter_is_driver_for_device(uint16_t vid, uint16_t pid) {
 }
 
 void xbox_wireless_adapter_initialize_device(input_dev_t* device) {
-  device->num_of_devices = 0;
+  device->num_of_devices = 4;
   device->devices_idx = malloc(sizeof(int)*4);
   for(int i = 0; i < 4; i++) {
     int next_id = find_next_free_device_idx();
@@ -144,7 +143,15 @@ void xbox_wireless_adapter_initialize_device(input_dev_t* device) {
 
     attached_dev->data_len = sizeof(xbox_controller);
     attached_dev->data = malloc(sizeof(xbox_controller));
-    attached_dev->config = NULL;
+    if(i == 0) {
+      attached_dev->config = &xbox_pass_1;
+    }
+    else if( i == 1) {
+      attached_dev->config = &xbox_pass_2; 
+    }
+    else {
+      attached_dev->config = NULL;
+    }
 
     attached_dev->connected = true;
   }
