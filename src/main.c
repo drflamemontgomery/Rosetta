@@ -20,6 +20,8 @@ uint8_t num_of_input_devices = 0;
 input_dev_t input_devices[MAX_INPUT_DEVICES]  = {{ NULL, 0, NULL, 0 }};
 device_t attached_devices[MAX_ATTACHED_DEVICES] = {{ false, 0x00, NULL, NULL }};
 
+uint8_t true_out[4] = {0, 1, 2, 3};
+
 static usb_device_t *usb_device = NULL;
 
 // Data used by device drivers for interacting as a usb device
@@ -84,7 +86,7 @@ int main(void) {
 
   tud_init(0);
 
-
+  srand(time_us_64());
 
   while(1) {
     tud_task();
@@ -170,6 +172,39 @@ void tud_resume_cb(void)
 // USB HID
 //--------------------------------------------------------------------+
 
+void switch_players() {
+  for(int i = 0; i < 4; i++) {
+    int p = rand()%4;
+
+    bool changed = true;
+    while(changed) {
+      changed = false;
+      for(int j = 0; j < i; j++) {
+        if(p == true_out[j]) {
+          changed = true;
+          p = (p + 1)%4;
+        }
+      }
+    }
+
+    true_out[i] = p;
+  }
+}
+
+void check_switch() {
+  static bool is_pressed[4] = { false };
+
+  for(int i = 0; i < 4; i++) {
+#define should_switch (0b11<<10)
+    if((hid_device_out[i].buttons & should_switch) == should_switch && !is_pressed[i]) {
+      is_pressed[i] = true; 
+      switch_players();
+    }
+    else if(is_pressed[i] && (hid_device_out[i].buttons & should_switch) != should_switch) {
+      is_pressed[i] = false;
+    }
+  }
+}
 
 void hid_task(void)
 {
@@ -180,11 +215,11 @@ void hid_task(void)
   if ( time_us_64() - start_us < interval_us) return; // not enough time
   start_us += interval_us;
  
-
+  check_switch();
   // Output reports for all devices
   for(int i = 0; i < 4; i++) {
-    if(tud_hid_n_ready(i)) {
-      tud_hid_n_report(i, 0, (uint8_t*)&hid_device_out[i], sizeof(pro_controller_data));
+    if(tud_hid_n_ready(true_out[i])) {
+      tud_hid_n_report(true_out[i], 0, (uint8_t*)&hid_device_out[i], sizeof(pro_controller_data));
     }
   }
 }
