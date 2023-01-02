@@ -1,11 +1,20 @@
 #include "configs.h"
+#include <string.h>
 
+void xbox_pass_func(struct struct_config_elem* elem, uint8_t* data);
+void pass_through_func(struct struct_config_elem* elem, uint8_t* data);
 
 config_t left_half;
 config_t right_half;
 
 config_t left_risk_of_rain;
 config_t right_risk_of_rain;
+
+config_t pass_through_1;
+config_t pass_through_2;
+
+config_t xbox_pass_1;
+config_t xbox_pass_2;
 
 bool initialized = false;
 
@@ -17,11 +26,19 @@ void init_configs() {
   right_half.num_of_elems = 11;
   left_risk_of_rain.num_of_elems = 12;
   right_risk_of_rain.num_of_elems = 7;
+  pass_through_1.num_of_elems = 1;
+  pass_through_2.num_of_elems = 1;
+  xbox_pass_1.num_of_elems = 1;
+  xbox_pass_2.num_of_elems = 1;
 
   left_half.elems = malloc(sizeof(config_elem)*8);
   right_half.elems = malloc(sizeof(config_elem)*11);
   left_risk_of_rain.elems = malloc(sizeof(config_elem)*12);
   right_risk_of_rain.elems = malloc(sizeof(config_elem)*7);
+  pass_through_1.elems = malloc(sizeof(config_elem)*1);
+  pass_through_2.elems = malloc(sizeof(config_elem)*1);
+  xbox_pass_1.elems = malloc(sizeof(config_elem)*1);
+  xbox_pass_2.elems = malloc(sizeof(config_elem)*1);
   
 
   {
@@ -103,4 +120,71 @@ void init_configs() {
       right_half.elems[i+9].axis.reversed = 0;
     }
   }
+
+  // XBOX TEST CONFIG
+  
+  {
+    xbox_pass_1.elems[0].type = USER_DEFINED;
+    xbox_pass_1.elems[0].output = 2;
+    xbox_pass_1.elems[0].byte = 0;
+    xbox_pass_1.elems[0].user.run_config = xbox_pass_func;
+
+    xbox_pass_2.elems[0].type = USER_DEFINED;
+    xbox_pass_2.elems[0].output = 3;
+    xbox_pass_2.elems[0].byte = 0;
+    xbox_pass_2.elems[0].user.run_config = xbox_pass_func;
+  }
+  
+  {
+    pass_through_1.elems[0].type = USER_DEFINED;
+    pass_through_1.elems[0].output = 0;
+    pass_through_1.elems[0].byte = 0;
+    pass_through_1.elems[0].user.run_config = pass_through_func;
+
+    pass_through_2.elems[0].type = USER_DEFINED;
+    pass_through_2.elems[0].output = 1;
+    pass_through_2.elems[0].byte = 0;
+    pass_through_2.elems[0].user.run_config = pass_through_func;
+  }
+}
+
+void press_button(int dev_id, int btn_idx, int out_idx, uint16_t data) {
+  if((data & (1<<btn_idx)) == (1<<btn_idx)) {
+      hid_device_out[dev_id].buttons |= (1<<out_idx);
+  }
+}
+
+extern uint64_t blink_interval_ms;
+
+void xbox_pass_func(struct struct_config_elem* elem, uint8_t* data) {
+  struct struct_xbox_controller* controller = (struct struct_xbox_controller*)data;
+  hid_device_out[elem->output].axis_x = controller->axis_x;
+  hid_device_out[elem->output].axis_y = 0xff-controller->axis_y;
+  hid_device_out[elem->output].axis_z = controller->axis_z;
+  hid_device_out[elem->output].axis_rz = 0xff-controller->axis_rz;
+
+  press_button(elem->output, 8, 4, controller->buttons);
+  press_button(elem->output, 9, 5, controller->buttons);
+  press_button(elem->output, 10, 12, controller->buttons);
+  press_button(elem->output, 12, 1, controller->buttons);
+  press_button(elem->output, 13, 2, controller->buttons);
+  press_button(elem->output, 14, 0, controller->buttons);
+  press_button(elem->output, 15, 3, controller->buttons);
+  press_button(elem->output, 4, 9, controller->buttons);
+  press_button(elem->output, 5, 8, controller->buttons);
+  press_button(elem->output, 6, 10, controller->buttons);
+  press_button(elem->output, 7, 11, controller->buttons);
+  if(controller->lt > 0x7f) { hid_device_out[elem->output].buttons |= (1<<6); }
+  if(controller->rt > 0x7f) { hid_device_out[elem->output].buttons |= (1<<7); }
+  blink_interval_ms = 2000;
+}
+
+void pass_through_func(struct struct_config_elem* elem, uint8_t* data) {
+  struct faceoff_pro_controller_data* c_dat = (struct faceoff_pro_controller_data*)data;
+  hid_device_out[elem->output].buttons = c_dat->buttons;
+  hid_device_out[elem->output].hat = c_dat->hat;
+  hid_device_out[elem->output].axis_x = c_dat->axis_x;
+  hid_device_out[elem->output].axis_y = c_dat->axis_y;
+  hid_device_out[elem->output].axis_z = c_dat->axis_z;
+  hid_device_out[elem->output].axis_rz = c_dat->axis_rz;
 }
