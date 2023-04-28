@@ -34,6 +34,19 @@ static const usb_driver_t XBOX_WIRELESS_ADAPTER_DRIVER = {
 };
 
 //============================================================================---
+//   PS1_RACING_WHEEL_ADAPTER 
+//============================================================================---
+bool ps1_racing_wheel_adapter_is_driver_for_device(uint16_t vid, uint16_t pid);
+void ps1_racing_wheel_adapter_initialize_device(input_dev_t* device);
+void ps1_racing_wheel_adapter_get_data_for_device(input_dev_t* device);
+static const usb_driver_t PS1_RACING_WHEEL_ADAPTER_DRIVER = {
+  .is_driver_for_device = ps1_racing_wheel_adapter_is_driver_for_device,
+  .initialize_device = ps1_racing_wheel_adapter_initialize_device,
+  .get_data_for_device = ps1_racing_wheel_adapter_get_data_for_device,
+};
+
+
+//============================================================================---
 //   DRIVERS  
 //============================================================================---
 

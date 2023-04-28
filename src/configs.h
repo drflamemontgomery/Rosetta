@@ -14,6 +14,8 @@ extern config_t pass_through_2;
 extern config_t xbox_pass_1;
 extern config_t xbox_pass_2;
 
+extern config_t ps1_racing_wheel_pass;
+
 void init_configs();
 
 #endif
