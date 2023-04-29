@@ -24,6 +24,6 @@ add_executable(Rosetta
 target_include_directories(Rosetta PRIVATE src)
 
 target_link_libraries(Rosetta
-	pico_stdlib pico_pio_usb tinyusb_device)
+	pico_stdlib pico_pio_usb tinyusb_device hardware_flash)
 
 pico_add_extra_outputs(Rosetta)
