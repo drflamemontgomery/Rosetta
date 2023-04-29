@@ -38,11 +38,7 @@ void deinitialize_device(device_t* device) {
     device->data = NULL;
   }
 
-  /*
-   * DO NOT FREE CONFIG MEMORY
-   * IT IS POINTING TO A PRECONFIGURED CONFIG
-   */
-  device->config = NULL;
+  unload_config(&device->new_configs);
 }
 
 void detach_driver(input_dev_t* dev) {
@@ -74,16 +70,6 @@ bool faceoff_pro_controller_is_driver_for_device(uint16_t vid, uint16_t pid) {
   return vid == 0x0e6f && pid == 0x0180;
 }
 
-void copy_config(config_t* dest, config_t* src) {
-  
-  dest->num_of_elems = src->num_of_elems;
-  dest->elems = malloc(sizeof(config_elem)*src->num_of_elems);
-  for(int i = 0; i < src->num_of_elems; i++) {
-    memcpy(&dest->elems[i], &src->elems[i], sizeof(src->elems[i]));
-  }
-}
-
-
 
 void faceoff_pro_controller_initialize_device(input_dev_t* device) {
   int next_id = find_next_free_device_idx();
@@ -97,12 +83,7 @@ void faceoff_pro_controller_initialize_device(input_dev_t* device) {
   
   attached_dev->data_len = sizeof(pro_controller_data);
   attached_dev->data = malloc(sizeof(pro_controller_data));
-  if(next_id % 4 == 0) {
-    attached_dev->config = &pass_through_1;
-  }
-  else if(next_id % 4 == 1) {
-    attached_dev->config = &pass_through_2;
-  }
+  attached_dev->new_configs = load_config(0);
 
   attached_dev->connected = true;
 }
@@ -156,16 +137,6 @@ void xbox_wireless_adapter_initialize_device(input_dev_t* device) {
     xbox_controller* controller = (xbox_controller*)attached_dev->data;
     controller->rumble_left = 0x00;
     controller->rumble_right = 0x00;
-
-    if(i == 0) {
-      attached_dev->config = &xbox_pass_1;
-    }
-    else if( i == 1) {
-      attached_dev->config = &xbox_pass_2; 
-    }
-    else {
-      attached_dev->config = NULL;
-    }
 
     attached_dev->connected = true;
   }
@@ -250,8 +221,6 @@ void ps1_racing_wheel_adapter_initialize_device(input_dev_t* device) {
   controller->axis_y = 0x80;
   controller->paddle = 0x80;
   controller->buttons = 0x0000;
-
-  attached_dev->config = &ps1_racing_wheel_pass;
 
   attached_dev->connected = true;
 }

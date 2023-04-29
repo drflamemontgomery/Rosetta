@@ -21,7 +21,7 @@ uint8_t num_of_input_devices = 0;
 // Abstraction for holding current plugged in devices with their drivers
 
 input_dev_t input_devices[MAX_INPUT_DEVICES]  = {{ NULL, 0, NULL, 0 }};
-device_t attached_devices[MAX_ATTACHED_DEVICES] = {{ false, 0x00, NULL, NULL }};
+device_t attached_devices[MAX_ATTACHED_DEVICES] = {{ false, 0x00, NULL, {0, NULL} }};
 
 static usb_device_t *usb_device = NULL;
 
@@ -84,9 +84,6 @@ int main(void) {
   gpio_set_dir(25, GPIO_OUT);
   gpio_put(25, 1);
  
-  // initialize controller configs so that they are ready for use by drivers 
-  init_configs(); 
-  
   multicore_reset_core1();
   multicore_launch_core1(core1_main);
   
@@ -179,97 +176,6 @@ void tud_resume_cb(void)
 // USB HID
 //--------------------------------------------------------------------+
 
-void switch_team_1() {
-  int first_player = true_out[0];
-  true_out[0] = true_out[2];
-  true_out[2] = first_player;
-}
-
-void switch_team_2() {
-  int first_player = true_out[1];
-  true_out[1] = true_out[3];
-  true_out[3] = first_player;
-}
-
-void rumble_xbox_controller(int index, uint8_t left, uint8_t right) {
-  for(int i = 0; i < MAX_ATTACHED_DEVICES; i++) {
-    if(attached_devices[i].config == NULL) { continue; }
-    if(attached_devices[i].config->num_of_elems <= 0) { continue; }
-    if(attached_devices[i].config->elems[0].output != (index+2)) { continue; }
-    xbox_controller* controller = (xbox_controller*)attached_devices[i].data;
-
-    controller->rumble_left = left;
-    controller->rumble_right = right;
-    break;
-  }
-}
-
-void check_switch() {
-  static uint64_t last_time[2] = {0, 0};
-  const uint64_t timeout = 15*1000*1000;
-  const uint64_t reminder_stop_timeout = 2*100*1000;
-  const uint64_t long_reminder_stop_timeout = 10*100*1000;
-  static bool remind[2] = {true, true};
-  static bool long_remind[2] = { true, true }; 
-
-  for(int i = 0; i < 2; i++) {
-    if(time_us_64() - last_time[i] < timeout) { continue; }
-    if(remind[i]) {
-      if(time_us_64() - last_time[i] < (timeout + reminder_stop_timeout)) {
-        rumble_xbox_controller(i, 0x00, 0xff);
-      }
-      else {
-        rumble_xbox_controller(i, 0x00, 0x00);
-        remind[i] = false;
-      }
-    }
-
-    if(long_remind[i]) {
-      if(time_us_64() - last_time[i] < (long_reminder_stop_timeout)) {
-        rumble_xbox_controller(i, 0xff, 0x00);
-      }
-      else {
-        rumble_xbox_controller(i, 0x00, 0x00);
-        long_remind[i] = false;
-        remind[1-i] = true;
-      }
-      
-    }
-    
-  }
-
-  for(int i = 0; i < 4; i++) {
-
-    static bool is_pressed[4] = {false};
-    static int team[4] = {1, 0, 1, 0};
-
-    
-
-    if(!is_pressed[i] && (hid_device_out[i].buttons & (1<<10)) != 0) {
-      is_pressed[i] = true;
-      
-      if(time_us_64() - last_time[team[i]] < timeout) {continue;}
-      last_time[team[i]] = time_us_64();
-      rumble_xbox_controller(team[i], 0xff, 0x00);
-      //rumble_xbox_controller(team[i], 0xff);
-      if(team[i] == 1) {
-        switch_team_2();
-        long_remind[1] = true;
-      }
-      else {
-        switch_team_1();
-        long_remind[0] = true;
-      }
-    } else if(is_pressed[i] && !(hid_device_out[i].buttons & (1<<10))) {
-      blink_interval_ms = 1000;
-      is_pressed[i] = false;
-      //rumble_xbox_controller(team[i], 0x00);
-    }
-
-  }
-
-}
-
 void hid_task(void)
 {
   // Poll every 10ms
@@ -278,36 +184,6 @@ void hid_task(void)
 
   if ( time_us_64() - start_us < interval_us) return; // not enough time
   start_us += interval_us;
- 
-  //check_switch();
-  
-  //if(isConnected(&balance_controller)) {
-    /*short top_left = balance_controller.lx_axis;
-    short bottom_left = balance_controller.ly_axis;
-    short top_right = balance_controller.rx_axis;
-    short bottom_right = balance_controller.ry_axis;
-    if(bottom_left < 400) { bottom_left = 0x0000; }
-    
-    
-
-    float x_axis = 0.0f;
-    float y_axis = 0.0f;
-    float total_weight = top_left + bottom_left + top_right + bottom_right;
-    if(total_weight > 400) {
-      x_axis += -top_left/total_weight;
-      x_axis += -bottom_left/total_weight;
-      x_axis += top_right/total_weight;
-      x_axis += bottom_right/total_weight;
-
-      y_axis += -top_left/total_weight;
-      y_axis += bottom_left/total_weight;
-      y_axis += -top_right/total_weight;
-      y_axis += bottom_right/total_weight;
-    }
-
-    hid_device_out[0].axis_x = (uint8_t)(x_axis * 0x7f + 0x80);
-    hid_device_out[0].axis_y = (uint8_t)(y_axis * 0x7f + 0x80);*/
-  //}
 
   // Output reports for all devices
   for(int i = 0; i < 4; i++) {
@@ -367,6 +243,7 @@ void usb_host_task() {
     if(dev->_device->device_class == CLASS_HUB) {continue;}
     // Run driver then config
     drivers[dev->driver_idx].get_data_for_device(dev);
-    run_config(dev); 
+    //run_config(dev); 
+    run_config_holder(dev);
   }
 }

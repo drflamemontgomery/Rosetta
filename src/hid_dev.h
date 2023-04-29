@@ -46,56 +46,41 @@ typedef struct struct_ps1_racing_wheel {
 
 extern pro_controller_data hid_device_out[MAX_HID_OUT];
 
-typedef enum enum_config_type {
-  BUTTON,
-  AXIS,
-  HAT,
-  USER_DEFINED,
-} config_type;
+typedef enum enum_byte_config_type {
+  CH_BUTTON_PASS_THROUGH = 0x00,
+  CH_HAT_PASS_THROUGH    = 0x10,
+  CH_AXIS_PASS_THROUGH   = 0x20,
 
-typedef struct struct_button_config {
-  uint8_t mask_from;
-  uint16_t mask_to;
-} button_config;
+  CH_BUTTON = 0x01,
+  CH_HAT    = 0x11,
+  CH_AXIS   = 0x21,
 
-typedef struct struct_axis_config {
-  uint8_t axis;
-  uint8_t reversed;
-} axis_config;
+  CH_USER_DEFINED = 0xFF,
+} byte_config_type;
 
-typedef struct struct_hat_config {
-  uint8_t __unused unused_data;
-} hat_config;
 
-struct struct_config_elem;
+typedef struct struct_config_header {
+  uint8_t size;
+  uint8_t controller_id;
+  uint8_t start_byte;
+  uint8_t byte_size;
+  uint8_t active_type;
+  uint8_t mapping_type;
 
-typedef struct struct_user_config {
-  void (*run_config)(struct struct_config_elem*, uint8_t* data);
-  void* data;
-} user_config;
+  // active_data
+  // mapping_data
+} config_header;
 
-typedef struct struct_config_elem {
-  config_type type;
-  uint8_t output; // Controller Output (0-3)
-  uint8_t byte;
-  union {
-    button_config btn;
-    axis_config axis;
-    hat_config hat;
-    user_config user;
-  };
-} config_elem;
-
-typedef struct struct_config {
-  uint8_t num_of_elems;
-  config_elem* elems;
-} config_t;
+typedef struct struct_config_holder {
+  uint8_t num_of_configs;
+  config_header** configs;  
+} config_holder;
 
 typedef struct struct_device {
   bool connected;
   uint8_t data_len;
   uint8_t *data;
-  config_t *config;
+  config_holder new_configs;
 } device_t;
 
 typedef struct struct_input_dev {
@@ -105,7 +90,7 @@ typedef struct struct_input_dev {
   uint8_t driver_idx;
 } input_dev_t;
 
-void run_config(input_dev_t* dev);
+void run_config_holder(input_dev_t* dev);
 
 typedef struct struct_usb_driver {
   bool (*is_driver_for_device)(uint16_t, uint16_t); // is_driver_for_device(int vid, int pid);
