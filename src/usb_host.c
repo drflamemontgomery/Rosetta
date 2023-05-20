@@ -11,8 +11,16 @@
 #include "tusb.h"
 
 #include "settings.h"
+#include "structs.h"
+
+extern void attach_driver(usb_input_t* usb_input);
+extern void detach_driver(usb_input_t* usb_input);
 
 usb_device_t* usb_device = NULL;
+
+int num_of_input_devices = 0;
+usb_input_t usb_devices[MAX_USB_INPUTS] = {NULL};
+
 
 void setup_usb_host(void);
 
@@ -65,11 +73,29 @@ void flush_hubs(void) {
 }
 
 void pio_hid_connect_host_cb(usb_device_t *device) {
-  (void) device;
-  // TODO implement connecting logic
+  if(device == NULL) return;
+  if(device->device_class == CLASS_HUB) return;
+
+  for(int i = 0; i < MAX_USB_INPUTS; i++) {
+    if(usb_devices[i]._device != NULL) continue;
+    usb_devices[i]._device = device;
+
+    attach_driver(&usb_devices[i]);
+    num_of_input_devices += 1;
+    return;
+  }
 }
 
 void pio_disconnect_host_cb(usb_device_t *device) {
-  (void) device;
-  // TODO implement disconnecting logic
+  if(device == NULL) return;
+  if(device->device_class == CLASS_HUB) return;
+
+  for(int i = 0; i < MAX_USB_INPUTS; i++) {
+    if(usb_devices[i]._device != device) continue;
+    usb_devices[i]._device = NULL;
+
+    detach_driver(&usb_devices[i]);
+    num_of_input_devices -= 1;
+    return;
+  }
 }

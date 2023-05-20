@@ -29,7 +29,7 @@ int main(void) {
 
   while(true) {
     tud_task();
-    //led_blinking_task();
+    led_blinking_task();
     usb_host_task();
     // HID OUTPUT TASK
     hid_task();

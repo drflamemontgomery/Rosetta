@@ -11,16 +11,9 @@
 #include "tusb.h"
 
 #include "settings.h"
+#include "structs.h"
 
-struct {
-  uint16_t buttons;
-  uint8_t hat;
-  int8_t axis_x;
-  int8_t axis_y;
-  int8_t axis_z;
-  int8_t axis_rz;
-  uint8_t __unused null_byte;
-} hid_output[MAX_OUTPUTS] = {{
+output_controller_t hid_output[MAX_OUTPUTS] = {{
   0x0000,
   
   0x0f,

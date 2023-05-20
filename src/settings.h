@@ -27,6 +27,7 @@ enum {
 //========================================---
 
 #define MAX_USB_INPUTS 7
+#define MAX_USB_DEVICES 8
 
 //========================================---
 // USB HOST SETTINGS
