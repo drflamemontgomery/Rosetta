@@ -13,13 +13,26 @@ add_subdirectory(${PICO_PIO_USB_DIR} pico_pio_usb)
 
 message(STATUS "pio_dir ${PICO_PIO_USB_DIR}")
 
-add_executable(Rosetta
-	src/main.c
+#file(GLOB_RECURSE PROJECT_SRCS "src/old/*.c")
+
+#set(UNUSED_SRCS
+set(PROJECT_SRCS
+  src/main.c
   src/usb_descriptors.c
   src/setup.c
-  src/usb_descriptors.c
   src/usb_device.c
   src/usb_host.c
+  src/drivers.c
+
+  src/output.c
+
+  src/led.c
+)
+
+message(STATUS "srcs: ${PROJECT_SRCS}")
+
+add_executable(Rosetta
+  ${PROJECT_SRCS}
 )
 
 target_include_directories(Rosetta PRIVATE src)
