@@ -16,9 +16,10 @@ message(STATUS "pio_dir ${PICO_PIO_USB_DIR}")
 add_executable(Rosetta
 	src/main.c
   src/usb_descriptors.c
-  src/drivers.c
-  src/config.c
-  src/configs.c
+  src/setup.c
+  src/usb_descriptors.c
+  src/usb_device.c
+  src/usb_host.c
 )
 
 target_include_directories(Rosetta PRIVATE src)
