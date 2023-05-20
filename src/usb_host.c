@@ -63,3 +63,13 @@ void flush_hubs(void) {
     }
   }
 }
+
+void pio_hid_connect_host_cb(usb_device_t *device) {
+  (void) device;
+  // TODO implement connecting logic
+}
+
+void pio_disconnect_host_cb(usb_device_t *device) {
+  (void) device;
+  // TODO implement disconnecting logic
+}

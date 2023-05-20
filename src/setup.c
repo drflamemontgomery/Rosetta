@@ -23,9 +23,8 @@
 
 void on_watchdog_reboot(void);
 
-void init(void) {
-  set_sys_clock_khz(12000, true); // Set the clock for USB
-  
+void setup(void) {
+  set_sys_clock_khz(120000, true); // Set the clock for USB
 
   // Turn the board LED on
   gpio_init(GPIO_LED);
@@ -37,4 +36,8 @@ void init(void) {
   // setup watchdog for auto rebooting
   watchdog_enable(WATCHDOG_TIMEOUT, WATCHDOG_DEBUG);
 
+}
+
+void on_watchdog_reboot(void) {
+  // TODO implement reboot
 }
