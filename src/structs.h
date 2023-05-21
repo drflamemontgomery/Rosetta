@@ -1,10 +1,7 @@
 #pragma once
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "pico/stdlib.h"
+#include "pio_usb.h"
 
 //========================================---
 // Data Structures
@@ -44,9 +41,6 @@ typedef struct struct_config_header {
   uint8_t byte_size;
   uint8_t active_type;
   uint8_t mapping_type;
-
-  // active data
-  // mapping data
 } config_header_t;
 
 typedef struct struct_config_holder {
@@ -81,3 +75,15 @@ typedef struct struct_usb_driver {
   void (*initialize_device)(usb_input_t*); // (usb_input_t* usb_input_device)
   void (*get_data_for_device)(usb_input_t*); // (usb_input_t* usb_input_device)
 } usb_driver_t;
+
+#define USB_DRIVER(is_driver_for_device, initialize_device, get_data_for_device) {\
+  is_driver_for_device,\
+  initialize_device,\
+  get_data_for_device\
+  }
+
+#define USB_DRIVER_STRUCT(NAME) USB_DRIVER(NAME##_is_driver_for_device, NAME##_initialize_device, NAME##_get_data_for_device)
+
+#define IS_DRIVER(NAME) NAME##_is_driver_for_device
+#define INIT_DRIVER(NAME) NAME##_initialize_device
+#define GET_DATA_DRIVER(NAME) NAME##_get_data_for_device

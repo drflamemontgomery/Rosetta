@@ -1,14 +1,5 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-
-#include "pico/stdlib.h"
-#include "pico/bootrom.h"
-#include "hardware/irq.h"
-#include "pico/binary_info.h"
-
-#include "pio_usb.h"
-#include "tusb.h"
 
 #include "settings.h"
 #include "structs.h"
@@ -24,6 +15,8 @@ device_t devices[MAX_USB_DEVICES] = {{
   NULL,
   {0, NULL},
 }};
+
+extern void run_config_holder(usb_input_t* usb_input);
 
 void update_usb_drivers(usb_device_t *usb_device) {
   if(usb_device == NULL) return;
@@ -47,26 +40,34 @@ void update_usb_drivers(usb_device_t *usb_device) {
 
     drivers[usb_input->driver_idx].get_data_for_device(usb_input);
     
-    memcpy(&hid_output[*usb_input->devices_idx % MAX_OUTPUTS],
+    /*memcpy(&hid_output[*usb_input->devices_idx % MAX_OUTPUTS],
         devices[*usb_input->devices_idx].data,
-        devices[*usb_input->devices_idx].data_len);
+        devices[*usb_input->devices_idx].data_len);*/
 
-    //run_config_holder(usb_input);
+    run_config_holder(usb_input);
   }
 }
 
-#define DEFAULT_DRIVER { \
-  .is_driver_for_device = NULL, \
-  .initialize_device    = default_driver_initialize_device, \
-  .get_data_for_device  = default_driver_get_data_for_device, \
-}
+/*#define DEFAULT_DRIVER {\
+  .is_driver_for_device = NULL,\
+  .initialize_device    = default_driver_initialize_device,\
+  .get_data_for_device  = default_driver_get_data_for_device,\
+}*/
 
-void default_driver_initialize_device(usb_input_t *usb_input);
-void default_driver_get_data_for_device(usb_input_t *usb_input);
+void INIT_DRIVER(default_driver)(usb_input_t *usb_input);
+void GET_DATA_DRIVER(default_driver)(usb_input_t *usb_input);
+#define DEFAULT_DRIVER USB_DRIVER(NULL, INIT_DRIVER(default_driver), GET_DATA_DRIVER(default_driver))
 
-const uint8_t __in_flash("drivers") num_of_drivers = 1;
+
+bool IS_DRIVER(faceoff)(uint16_t vid, uint16_t pid);
+void INIT_DRIVER(faceoff)(usb_input_t *usb_input);
+void GET_DATA_DRIVER(faceoff)(usb_input_t *usb_input);
+
+
+const uint8_t __in_flash("drivers") num_of_drivers = 2;
 const usb_driver_t __in_flash("drivers") drivers[] = {
   DEFAULT_DRIVER,
+  USB_DRIVER_STRUCT(faceoff),
 };
 
 void deinitialize_device(device_t *device) {
@@ -116,7 +117,7 @@ int find_next_free_device_idx() {
 // Default Driver
 //========================================---
 
-void default_driver_initialize_device(usb_input_t *usb_input) {
+void INIT_DRIVER(default_driver)(usb_input_t *usb_input) {
   
   int usb_idx = find_next_free_device_idx();
   if(usb_idx < 0) return;
@@ -148,7 +149,7 @@ void default_driver_initialize_device(usb_input_t *usb_input) {
   device->connected = true;
 }
 
-void default_driver_get_data_for_device(usb_input_t *usb_input) {
+void GET_DATA_DRIVER(default_driver)(usb_input_t *usb_input) {
   device_t* device = &devices[*usb_input->devices_idx];
 
   for(int ep_idx = 0; ep_idx < PIO_USB_DEV_EP_CNT; ep_idx++) {
@@ -164,4 +165,23 @@ void default_driver_get_data_for_device(usb_input_t *usb_input) {
       device->data = malloc(len);
     }
   }
+}
+
+//========================================---
+// Faceoff Driver
+//========================================---
+
+extern config_holder_t load_config(int fd);
+
+bool IS_DRIVER(faceoff)(uint16_t vid, uint16_t pid) {
+  return vid == 0x0e6f && pid == 0x0180;
+}
+
+void INIT_DRIVER(faceoff)(usb_input_t *usb_input) {
+  INIT_DRIVER(default_driver)(usb_input);
+  devices[*usb_input->devices_idx].configs = load_config(0);
+}
+
+void GET_DATA_DRIVER(faceoff)(usb_input_t *usb_input) {
+  GET_DATA_DRIVER(default_driver)(usb_input);
 }
