@@ -24,9 +24,9 @@ set(PROJECT_SRCS
   src/usb_host.c
   src/drivers.c
 
-  src/output.c
-
   src/led.c
+  src/fs.c
+  src/config.c
 )
 
 message(STATUS "srcs: ${PROJECT_SRCS}")
