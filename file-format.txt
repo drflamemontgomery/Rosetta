@@ -1,0 +1,100 @@
+header:
+  file type:
+    - size : 4
+    - data : RCFG
+             0x5243 4647
+  num of fields:
+    - size : 1
+  byte config total size:
+    - size : 2
+
+
+byte config:
+  checksum:
+    - size : 2
+    - data : BC
+             0x4243
+  length:
+    - size : 1
+
+  start byte:
+    - size : 1
+
+  byte size: // char, short, int, long
+    - size : 1
+
+  activation type:
+    - size : 1
+    values:
+      - Button Pass Through 0x00
+      - Button 0x01
+
+      - Hat Pass Through 0x10
+      - Hat 0x11
+
+      - Axis Pass Through 0x20
+      - Axis Threshold 0x21
+
+      - User Defined 0xff
+  
+  mapping type:
+    - size : 1
+    values:
+      - Button Pass Through 0x00
+      - Button 0x01
+
+      - Hat Pass Through 0x10
+      - Hat 0x11
+
+      - Axis Pass Through 0x20
+      - Axis Threshold 0x21
+
+      - User Defined 0xff
+
+  activation config:
+    pass through (button, hat, axis):
+      - size : 0
+
+    button config:
+      - size : byte_size
+      - data : byte mask
+
+    hat config:
+      - size : 1
+      - data : hat value
+      
+    axis threshold config:
+      - size : byte_size
+      - data : threshold
+
+    user config:
+      - size : 0
+
+  mapping config:
+    pass through (button, hat): // Only for byte_size of short or char
+      - size : 0
+    pass through (axis): // Axis will be scaled to char
+      - size : 1
+      - data : axis to map to
+
+    button config:
+      - size : 2
+      - data : mask
+  
+    hat config:
+      - size : 1
+      - data : 0b00001111 // 0 0 0 0 Up Down Left Right
+    
+    axis config:
+      - size : 2
+      - axis to map to
+      - value
+
+    user config:
+      - size : 4
+      - address of config executable
+
+footer:
+  - size : 4
+  - data : GFCR
+           0x4746 4352
