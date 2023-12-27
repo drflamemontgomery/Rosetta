@@ -14,6 +14,7 @@ device_t devices[MAX_USB_DEVICES] = {{
   0,
   NULL,
   {0, NULL},
+  NULL,
 }};
 
 extern void run_config_holder(usb_input_t* usb_input);
@@ -56,19 +57,26 @@ void update_usb_drivers(usb_device_t *usb_device) {
 
 void INIT_DRIVER(default_driver)(usb_input_t *usb_input);
 void GET_DATA_DRIVER(default_driver)(usb_input_t *usb_input);
-#define DEFAULT_DRIVER USB_DRIVER(NULL, INIT_DRIVER(default_driver), GET_DATA_DRIVER(default_driver))
+#define DEFAULT_DRIVER USB_DRIVER(NULL, INIT_DRIVER(default_driver), NULL, GET_DATA_DRIVER(default_driver))
 
 
 bool IS_DRIVER(faceoff)(uint16_t vid, uint16_t pid);
 void INIT_DRIVER(faceoff)(usb_input_t *usb_input);
+void DEINIT_DRIVER(faceoff)(usb_input_t *usb_input);
 void GET_DATA_DRIVER(faceoff)(usb_input_t *usb_input);
 
+bool IS_DRIVER(keyboard)(uint16_t vid, uint16_t pid);
+void INIT_DRIVER(keyboard)(usb_input_t *usb_input);
+void DEINIT_DRIVER(keyboard)(usb_input_t *usb_input);
+void GET_DATA_DRIVER(keyboard)(usb_input_t *usb_input);
 
-const uint8_t __in_flash("drivers") num_of_drivers = 2;
 const usb_driver_t __in_flash("drivers") drivers[] = {
   DEFAULT_DRIVER,
   USB_DRIVER_STRUCT(faceoff),
+  USB_DRIVER_STRUCT(keyboard),
 };
+//const uint8_t __in_flash("drivers") num_of_drivers = sizeof(drivers)/sizeof(usb_driver_t);
+const uint8_t __in_flash("drivers") num_of_drivers = 3;
 
 void deinitialize_device(device_t *device) {
   device->connected = false;
@@ -93,6 +101,7 @@ void attach_driver(usb_input_t *usb_input) {
 }
 
 void detach_driver(usb_input_t *usb_input) {
+  drivers[usb_input->driver_idx].deinitialize_device(usb_input);
   for(int i = 0; i < usb_input->num_of_devices; i++) {
     deinitialize_device(&devices[usb_input->devices_idx[i]]);
   }
@@ -127,6 +136,7 @@ void INIT_DRIVER(default_driver)(usb_input_t *usb_input) {
   *usb_input->devices_idx = usb_idx;
 
   device_t* device = &devices[usb_idx];
+  device->userData = NULL;
 
   
   while(!usb_input->_device->connected);
@@ -177,11 +187,85 @@ bool IS_DRIVER(faceoff)(uint16_t vid, uint16_t pid) {
   return vid == 0x0e6f && pid == 0x0180;
 }
 
+static bool faceoff_ids[2] = { false, false };
+
+extern const int faceoff_1_config_length;
+extern const int faceoff_2_config_length;
+extern const uint8_t faceoff_1_config[];
+extern const uint8_t faceoff_2_config[];
+
 void INIT_DRIVER(faceoff)(usb_input_t *usb_input) {
+
   INIT_DRIVER(default_driver)(usb_input);
-  devices[*usb_input->devices_idx].configs = load_config(0);
+  device_t *device = &devices[*usb_input->devices_idx];
+  device->userData = (void *)-1;
+  for(long i = 0; i < 2; i++) {
+    if(!faceoff_ids[i]) {
+      faceoff_ids[i] = true;
+      device->userData = (void*)i;
+      break;
+    }
+  }
+
+  switch((long)device->userData) {
+    case 0: {
+      device->configs.num_of_configs = 2;
+      device->configs.configs = (config_header_t**)malloc(2);
+      long offset = 0;
+      for(int i = 0; i < 2; i++) {
+        uint8_t length = *faceoff_1_config;
+        device->configs.configs[i] = malloc(length);
+        memcpy(device->configs.configs[i], faceoff_1_config + offset, length);
+        offset += length;
+      }
+            }
+      break;
+    case 1: {
+      device->configs.num_of_configs = 2;
+      device->configs.configs = (config_header_t**)malloc(2);
+      long offset = 0;
+      for(int i = 0; i < 2; i++) {
+        uint8_t length = *faceoff_2_config;
+        device->configs.configs[i] = malloc(length);
+        memcpy(device->configs.configs[i], faceoff_2_config + offset, length);
+        offset += length;
+      }
+            }
+      break;
+  }
+}
+
+void DEINIT_DRIVER(faceoff)(usb_input_t *usb_input) {
+  device_t *device = &devices[*usb_input->devices_idx];
+  switch((long)device->userData) {
+    case 0:
+    case 1:
+      faceoff_ids[(long)device->userData] = false;
+  }
 }
 
 void GET_DATA_DRIVER(faceoff)(usb_input_t *usb_input) {
+  GET_DATA_DRIVER(default_driver)(usb_input);
+}
+
+//========================================---
+// Keyboard Driver
+//========================================---
+
+
+bool IS_DRIVER(keyboard)(uint16_t vid, uint16_t pid) {
+  return vid == 0x045e && pid == 0x0745; // my wireless keyboard
+}
+
+void INIT_DRIVER(keyboard)(usb_input_t *usb_input) {
+  INIT_DRIVER(default_driver)(usb_input);
+  devices[*usb_input->devices_idx].configs = load_config(1);
+}
+
+void DEINIT_DRIVER(keyboard)(usb_input_t *usb_input) {
+  (void)usb_input;
+}
+
+void GET_DATA_DRIVER(keyboard)(usb_input_t *usb_input) {
   GET_DATA_DRIVER(default_driver)(usb_input);
 }

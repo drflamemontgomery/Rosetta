@@ -50,6 +50,16 @@ enum {
 #define WATCHDOG_DEBUG 1
 
 //========================================---
+// SSD1306 SCREEN
+//========================================---
+
+#define MOSI_PIN 19
+#define CLK_PIN 18
+#define DC_PIN 16
+#define CS_PIN 17
+#define RST_PIN 1
+
+//========================================---
 // FILE SYSTEM SETTINGS
 //========================================---
 

@@ -7,6 +7,8 @@
 //  EXTERNAL FUNCTIONS
 //====================================================================---
 
+extern void screen_init();
+
 //====================================================================---
 //  MAIN SETUP CODE
 //====================================================================---
@@ -26,6 +28,7 @@ void setup(void) {
   // setup watchdog for auto rebooting
   watchdog_enable(WATCHDOG_TIMEOUT, WATCHDOG_DEBUG);
 
+  screen_init();
 }
 
 void on_watchdog_reboot(void) {

@@ -57,6 +57,7 @@ typedef struct struct_device {
   uint8_t data_len;
   uint8_t *data;
   config_holder_t configs;
+  void * userData;
 } device_t;
 
 typedef struct struct_usb_input {
@@ -73,17 +74,21 @@ typedef struct struct_usb_input {
 typedef struct struct_usb_driver {
   bool (*is_driver_for_device)(uint16_t, uint16_t); // (uint16_t vid, uint16_t pid)
   void (*initialize_device)(usb_input_t*); // (usb_input_t* usb_input_device)
+  void (*deinitialize_device)(usb_input_t*); // (usb_input_t* usb_input_device)
   void (*get_data_for_device)(usb_input_t*); // (usb_input_t* usb_input_device)
 } usb_driver_t;
 
-#define USB_DRIVER(is_driver_for_device, initialize_device, get_data_for_device) {\
+#define USB_DRIVER(is_driver_for_device, initialize_device, deinitialize_device, get_data_for_device) {\
   is_driver_for_device,\
   initialize_device,\
+  deinitialize_device,\
   get_data_for_device\
   }
 
-#define USB_DRIVER_STRUCT(NAME) USB_DRIVER(NAME##_is_driver_for_device, NAME##_initialize_device, NAME##_get_data_for_device)
-
 #define IS_DRIVER(NAME) NAME##_is_driver_for_device
 #define INIT_DRIVER(NAME) NAME##_initialize_device
+#define DEINIT_DRIVER(NAME) NAME##_deinitialize_device
 #define GET_DATA_DRIVER(NAME) NAME##_get_data_for_device
+
+#define USB_DRIVER_STRUCT(NAME) USB_DRIVER(IS_DRIVER(NAME), INIT_DRIVER(NAME), DEINIT_DRIVER(NAME), GET_DATA_DRIVER(NAME))
+
