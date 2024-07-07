@@ -7,16 +7,17 @@
 // Data Structures
 //========================================---
 
-typedef struct struct_output_controller {
-  uint16_t buttons;
-  uint8_t hat;
-  int8_t axis_x;
-  int8_t axis_y;
-  int8_t axis_z;
-  int8_t axis_rz;
-  uint8_t __unused null_byte;
+typedef union struct_output_controller {
+  struct {
+    uint16_t buttons;
+    uint8_t hat;
+    int8_t axis_x;
+    int8_t axis_y;
+    int8_t axis_z;
+    int8_t axis_rz;
+  };
+  uint8_t bytes[8];
 } output_controller_t;
-
 
 //========================================---
 // Config Structures
@@ -24,12 +25,12 @@ typedef struct struct_output_controller {
 
 typedef enum enum_byte_config_type {
   CH_BUTTON_PASS_THROUGH = 0x00,
-  CH_HAT_PASS_THROUGH    = 0x10,
-  CH_AXIS_PASS_THROUGH   = 0x20,
+  CH_HAT_PASS_THROUGH = 0x10,
+  CH_AXIS_PASS_THROUGH = 0x20,
 
   CH_BUTTON = 0x01,
-  CH_HAT    = 0x11,
-  CH_AXIS   = 0x21,
+  CH_HAT = 0x11,
+  CH_AXIS = 0x21,
 
   CH_USER_DEFINED = 0xFF,
 } byte_config_type_t;
@@ -57,13 +58,13 @@ typedef struct struct_device {
   uint8_t data_len;
   uint8_t *data;
   config_holder_t configs;
-  void * userData;
+  void *userData;
 } device_t;
 
 typedef struct struct_usb_input {
   usb_device_t *_device;
   int num_of_devices;
-  int* devices_idx;
+  int *devices_idx;
   uint8_t driver_idx;
 } usb_input_t;
 
@@ -72,17 +73,18 @@ typedef struct struct_usb_input {
 //========================================---
 
 typedef struct struct_usb_driver {
-  bool (*is_driver_for_device)(uint16_t, uint16_t); // (uint16_t vid, uint16_t pid)
-  void (*initialize_device)(usb_input_t*); // (usb_input_t* usb_input_device)
-  void (*deinitialize_device)(usb_input_t*); // (usb_input_t* usb_input_device)
-  void (*get_data_for_device)(usb_input_t*); // (usb_input_t* usb_input_device)
+  bool (*is_driver_for_device)(uint16_t,
+                               uint16_t);     // (uint16_t vid, uint16_t pid)
+  void (*initialize_device)(usb_input_t *);   // (usb_input_t* usb_input_device)
+  void (*deinitialize_device)(usb_input_t *); // (usb_input_t* usb_input_device)
+  void (*get_data_for_device)(usb_input_t *); // (usb_input_t* usb_input_device)
 } usb_driver_t;
 
-#define USB_DRIVER(is_driver_for_device, initialize_device, deinitialize_device, get_data_for_device) {\
-  is_driver_for_device,\
-  initialize_device,\
-  deinitialize_device,\
-  get_data_for_device\
+#define USB_DRIVER(is_driver_for_device, initialize_device,                    \
+                   deinitialize_device, get_data_for_device)                   \
+  {                                                                            \
+    is_driver_for_device, initialize_device, deinitialize_device,              \
+        get_data_for_device                                                    \
   }
 
 #define IS_DRIVER(NAME) NAME##_is_driver_for_device
@@ -90,5 +92,6 @@ typedef struct struct_usb_driver {
 #define DEINIT_DRIVER(NAME) NAME##_deinitialize_device
 #define GET_DATA_DRIVER(NAME) NAME##_get_data_for_device
 
-#define USB_DRIVER_STRUCT(NAME) USB_DRIVER(IS_DRIVER(NAME), INIT_DRIVER(NAME), DEINIT_DRIVER(NAME), GET_DATA_DRIVER(NAME))
-
+#define USB_DRIVER_STRUCT(NAME)                                                \
+  USB_DRIVER(IS_DRIVER(NAME), INIT_DRIVER(NAME), DEINIT_DRIVER(NAME),          \
+             GET_DATA_DRIVER(NAME))
