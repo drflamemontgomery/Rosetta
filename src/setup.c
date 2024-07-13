@@ -1,5 +1,5 @@
-#include "pico/stdlib.h"
 #include "hardware/watchdog.h"
+#include "pico/stdlib.h"
 
 #include "settings.h"
 
@@ -23,12 +23,13 @@ void setup(void) {
   gpio_set_dir(GPIO_LED, GPIO_OUT);
   gpio_put(GPIO_LED, 1);
 
-  if(watchdog_caused_reboot()) on_watchdog_reboot();
+  screen_init();
+
+  if (watchdog_caused_reboot())
+    on_watchdog_reboot();
 
   // setup watchdog for auto rebooting
   watchdog_enable(WATCHDOG_TIMEOUT, WATCHDOG_DEBUG);
-
-  screen_init();
 }
 
 void on_watchdog_reboot(void) {

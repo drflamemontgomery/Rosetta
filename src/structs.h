@@ -53,19 +53,16 @@ typedef struct struct_config_holder {
 // Input Device Structures
 //========================================---
 
-typedef struct struct_device {
+typedef struct struct_usb_input {
   bool connected;
+  uint8_t addr;
+  uint8_t instance;
+  uint8_t driver_idx;
+
   uint8_t data_len;
   uint8_t *data;
   config_holder_t configs;
   void *userData;
-} device_t;
-
-typedef struct struct_usb_input {
-  usb_device_t *_device;
-  int num_of_devices;
-  int *devices_idx;
-  uint8_t driver_idx;
 } usb_input_t;
 
 //========================================---

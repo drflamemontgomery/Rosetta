@@ -1,89 +1,114 @@
 #include "settings.h"
 #include "structs.h"
+#include <stdbool.h>
 
-extern void attach_driver(usb_input_t* usb_input);
-extern void detach_driver(usb_input_t* usb_input);
+#include "pio_usb.h"
+#include "tusb.h"
 
-usb_device_t* usb_device = NULL;
+#include "text.h"
+
+extern void attach_driver(usb_input_t *usb_input);
+extern void detach_driver(usb_input_t *usb_input);
+
+void usb_host_task(void);
+extern frame_buffer_t screen;
 
 int num_of_input_devices = 0;
 usb_input_t usb_devices[MAX_USB_INPUTS] = {NULL};
-
 
 void setup_usb_host(void);
 
 void core1_main(void) {
   setup_usb_host();
-  while(true) pio_usb_host_task();
+  while (true) {
+    tuh_task();
+    usb_host_task();
+  }
 }
-
 
 void setup_usb_host(void) {
 
   static pio_usb_configuration_t config = PIO_USB_DEFAULT_CONFIG;
   config.pin_dp = USB_HOST_PIN_1;
-  config.alarm_pool = (void*)alarm_pool_create(2, 1);
-  usb_device = pio_usb_host_init(&config);
-
+  tuh_configure(1, TUH_CFGID_RPI_PIO_USB_CONFIGURATION, &config);
 #if USB_HOST_ADD_PORT
-  pio_usb_host_add_port(USB_HOST_PIN_2);
+  static pio_usb_configuration_t config2 = PIO_USB_DEFAULT_CONFIG;
+  config.pin_dp = USB_HOST_PIN_2;
+  tuh_configure(2, TUH_CFGID_RPI_PIO_USB_CONFIGURATION, &config2);
+  // pio_usb_host_add_port(USB_HOST_PIN_2, PIO_USB_PINOUT_DPDM);
+#endif
+
+  tuh_init(1);
+#if USB_HOST_ADD_PORT
+  tuh_init(2);
 #endif
 }
 
-void flush_hubs(void);
-extern void update_usb_drivers(usb_device_t *usb_device);
-
 void usb_host_task(void) {
-  flush_hubs();
-  update_usb_drivers(usb_device);
-}
-
-
-// Get Data From USB Hubs
-void flush_hubs(void) {
-  if(usb_device != NULL) {
-    for(int dev_idx = 0; dev_idx < PIO_USB_DEVICE_CNT; dev_idx++) {
-      usb_device_t *device = &usb_device[dev_idx];
-
-      if(!device->connected) continue;
-      if(device->device_class != CLASS_HUB) continue;
-
-      for(int ep_idx = 0; ep_idx < PIO_USB_DEV_EP_CNT; ep_idx++) {
-        endpoint_t *ep = pio_usb_get_endpoint(device, ep_idx);
-
-        if(ep == NULL) break;
-
-        static uint8_t temp[64];
-        pio_usb_get_in_data(ep, temp, sizeof(temp));
-      }
-    }
+  for (int i = 0; i < MAX_USB_INPUTS; i++) {
+    if (!usb_devices[i].connected)
+      continue;
+    if (!tuh_hid_mounted(usb_devices[i].addr, usb_devices[i].instance))
+      continue;
+    tuh_hid_receive_report(usb_devices[i].addr, usb_devices[i].instance);
   }
 }
 
-void pio_hid_connect_host_cb(usb_device_t *device) {
-  if(device == NULL) return;
-  if(device->device_class == CLASS_HUB) return;
+void tuh_mount_cb(uint8_t dev_addr) { (void)dev_addr; }
+void tuh_umount_cb(uint8_t dev_addr) { (void)dev_addr; }
+void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance,
+                      uint8_t const *desc_report, uint16_t desc_len) {
+  char buf[64];
+  sprintf(buf, "[HID %02X:%02X] Connected\n", dev_addr, instance);
+  append_frame_buffer(&screen, (const char *)buf);
 
-  for(int i = 0; i < MAX_USB_INPUTS; i++) {
-    if(usb_devices[i]._device != NULL) continue;
-    usb_devices[i]._device = device;
+  (void)desc_report;
+  (void)desc_len;
+
+  for (int i = 0; i < MAX_USB_INPUTS; i++) {
+    if (usb_devices[i].connected)
+      continue;
+    usb_devices[i].connected = true;
+    usb_devices[i].addr = dev_addr;
+    usb_devices[i].instance = instance;
 
     attach_driver(&usb_devices[i]);
     num_of_input_devices += 1;
     return;
   }
 }
-
-void pio_disconnect_host_cb(usb_device_t *device) {
-  if(device == NULL) return;
-  if(device->device_class == CLASS_HUB) return;
-
-  for(int i = 0; i < MAX_USB_INPUTS; i++) {
-    if(usb_devices[i]._device != device) continue;
-    usb_devices[i]._device = NULL;
-
+void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
+  char buf[64];
+  sprintf(buf, "[HID %02X:%02X] Disconnected\n", dev_addr, instance);
+  append_frame_buffer(&screen, (const char *)buf);
+  (void)dev_addr;
+  (void)instance;
+  for (int i = 0; i < MAX_USB_INPUTS; i++) {
+    if (!usb_devices[i].connected)
+      continue;
+    if (usb_devices[i].addr != dev_addr)
+      continue;
+    if (usb_devices[i].instance != instance)
+      continue;
+    usb_devices[i].connected = false;
     detach_driver(&usb_devices[i]);
     num_of_input_devices -= 1;
     return;
   }
+}
+
+void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance,
+                                uint8_t const *report, uint16_t len) {
+  char buf[64] = {0};
+  sprintf(buf, "[%02X:%02X]:", dev_addr, instance);
+  append_frame_buffer(&screen, (const char *)buf);
+  for (int i = 0; i < len; i++) {
+    sprintf(buf, " %02X", report[i]);
+    append_frame_buffer(&screen, (const char *)buf);
+    if (i++ >= len)
+      break;
+    sprintf(buf, "%02X", report[i]);
+    append_frame_buffer(&screen, (const char *)buf);
+  }
+  append_frame_buffer(&screen, "\n");
 }
