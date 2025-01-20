@@ -15,21 +15,9 @@ message(STATUS "pio_dir ${PICO_PIO_USB_DIR}")
 
 set(PROJECT_SRCS
   src/main.c
+  src/app.c
   src/usb_descriptors.c
-  src/setup.c
   src/usb_device.c
-  src/usb_host.c
-  src/drivers.c
-
-  src/led.c
-  src/fs.c
-  src/config.c
-
-  src/ssd1306.c
-  src/text.c
-  src/screen.c
-
-  src/temp_configs.c
 
  ${PICO_TINYUSB_PATH}/src/portable/raspberrypi/pio_usb/dcd_pio_usb.c
  ${PICO_TINYUSB_PATH}/src/portable/raspberrypi/pio_usb/hcd_pio_usb.c

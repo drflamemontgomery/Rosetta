@@ -1,29 +1,32 @@
-#include "hardware/watchdog.h"
-#include "pico/multicore.h"
-
+#include "app.h"
+#include "settings.h"
 #include "tusb.h"
 
-extern void setup(void);             // setup.c
-extern void core1_main(void);        // usb_host.c
-extern void hid_task(void);          // output.c
-extern void led_blinking_task(void); // led.c
-extern void screen_display(void);    // screen.c
+void rosetta_init(AppData *data);
+void rosetta_main(AppData *data);
+
+const AppVTable rosetta_app_vtable = {
+    .on_watchdog_reboot = NULL,
+    .init = rosetta_init,
+    .main = rosetta_main,
+    .deinit = NULL,
+};
 
 int main(void) {
-  setup();
 
-  multicore_reset_core1();
-  multicore_launch_core1(core1_main);
+  App app = App_initEx(GPIO_LED, &rosetta_app_vtable);
+  App_run(&app);
+  App_destroy(&app);
 
-  tud_init(0);
-
-  while (true) {
-    screen_display();
-    tud_task();
-    led_blinking_task();
-    //  HID OUTPUT TASK
-    hid_task();
-    watchdog_update();
-  }
   return 0;
+}
+
+void rosetta_init(AppData *data) {
+  (void)data;
+  tud_init(0);
+}
+
+void rosetta_main(AppData *data) {
+  (void)data;
+  tud_task();
 }
