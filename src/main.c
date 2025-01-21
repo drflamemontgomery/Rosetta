@@ -1,12 +1,14 @@
 #include "app.h"
+#include "hardware/gpio.h"
 #include "settings.h"
 #include "tusb.h"
 
 void rosetta_init(AppData *data);
 void rosetta_main(AppData *data);
+void debug_reboot(void);
 
 const AppVTable rosetta_app_vtable = {
-    .on_watchdog_reboot = NULL,
+    .on_watchdog_reboot = debug_reboot,
     .init = rosetta_init,
     .main = rosetta_main,
     .deinit = NULL,
@@ -14,7 +16,7 @@ const AppVTable rosetta_app_vtable = {
 
 int main(void) {
 
-  App app = App_initEx(GPIO_LED, &rosetta_app_vtable);
+  App app = App_initEx(GPIO_LED, AppData_default(), &rosetta_app_vtable);
   App_run(&app);
   App_destroy(&app);
 
@@ -29,4 +31,17 @@ void rosetta_init(AppData *data) {
 void rosetta_main(AppData *data) {
   (void)data;
   tud_task();
+
+  const uint32_t interval_us = 1000;
+  static uint32_t start_us = 0;
+
+  if (time_us_64() - start_us < interval_us)
+    return;
+  start_us += interval_us;
+
+  for (int i = 0; i < 4; i++) {
+    UsbOutput_sendReport(&data->outputs[i]);
+  }
 }
+
+void debug_reboot(void) { gpio_put(GPIO_LED, 0); }

@@ -18,6 +18,7 @@ set(PROJECT_SRCS
   src/app.c
   src/usb_descriptors.c
   src/usb_device.c
+  src/appdata.c
 
  ${PICO_TINYUSB_PATH}/src/portable/raspberrypi/pio_usb/dcd_pio_usb.c
  ${PICO_TINYUSB_PATH}/src/portable/raspberrypi/pio_usb/hcd_pio_usb.c

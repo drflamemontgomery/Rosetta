@@ -13,9 +13,20 @@ const AppVTable default_app_vtable = {
     .main = NULL,
 };
 
-App App_init() { return App_initEx(GPIO_LED, &default_app_vtable); }
+const OutputReport DEFAULTOUTP = {
+    .buttons = 0x0000,
+    .hat = 0x00,
+    .axis_x = 0,
+    .axis_y = 0,
+    .axis_z = 0,
+    .axis_rz = 0,
+};
 
-App App_initEx(uint led_pin, const AppVTable *vtable) {
+App App_init() {
+  return App_initEx(GPIO_LED, AppData_default(), &default_app_vtable);
+}
+
+App App_initEx(uint led_pin, AppData app_data, const AppVTable *vtable) {
   // Set the appropriate clock speed for USB
   set_sys_clock_khz(120000, true);
 
@@ -33,10 +44,8 @@ App App_initEx(uint led_pin, const AppVTable *vtable) {
   watchdog_enable(WATCHDOG_TIMEOUT, WATCHDOG_DEBUG);
 
   return (App){
-      .data =
-          (AppData){
-              .led_pin = led_pin,
-          },
+      .led_pin = led_pin,
+      .data = app_data,
       .vtable = vtable,
   };
 }
