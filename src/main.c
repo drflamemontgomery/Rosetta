@@ -6,6 +6,8 @@
 void rosetta_init(AppData *data);
 void rosetta_main(AppData *data);
 void debug_reboot(void);
+void screen_init(void);    // screen.c
+void screen_display(void); // screen.c
 
 const AppVTable rosetta_app_vtable = {
     .on_watchdog_reboot = debug_reboot,
@@ -25,11 +27,14 @@ int main(void) {
 
 void rosetta_init(AppData *data) {
   (void)data;
+
+  screen_init();
   tud_init(0);
 }
 
 void rosetta_main(AppData *data) {
   (void)data;
+  screen_display();
   tud_task();
 
   const uint32_t interval_us = 1000;
