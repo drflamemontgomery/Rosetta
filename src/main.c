@@ -39,8 +39,8 @@ void rosetta_main(AppData *data) {
     return;
   start_us += interval_us;
 
-  for (int i = 0; i < 4; i++) {
-    UsbOutput_sendReport(&data->outputs[i]);
+  for (int i = 0; i < data->outputs.len; i++) {
+    UsbOutput_sendReport(&data->outputs.ptr[i]);
   }
 }
 

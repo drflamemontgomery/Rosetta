@@ -4,7 +4,14 @@
 #include "usb.h"
 
 typedef struct AppData {
-  UsbOutput outputs[4];
+  /**
+   * USB Output in the format of a list for future compatability with dynamic
+   * lists for multiple devices
+   */
+  struct {
+    UsbOutput ptr[4];
+    int len;
+  } outputs;
 } AppData;
 
 AppData AppData_default();
